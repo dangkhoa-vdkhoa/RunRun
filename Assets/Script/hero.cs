@@ -1,5 +1,6 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class hero : MonoBehaviour
@@ -17,39 +18,50 @@ public class hero : MonoBehaviour
     [SerializeField] private AudioSource jumsound;
     [SerializeField] private AudioSource chamnensound;
 
+    [SerializeField] private GameObject Menu;
+
     private bool isPaused = false;
+    private bool moveLeft = false;
+    private bool moveRight = false;
+    private bool jump = false;
 
-    private enum MovementState { idle, running, jumping,falling}
+    private enum MovementState { idle, running, jumping, falling }
 
-
-    //private MovementState satate = MovementState.idle;
-
-    // Start is called before the first frame update
     private void Start()
     {
         animator = GetComponent<Animator>();
-        sprite = GetComponent<SpriteRenderer>();    
+        sprite = GetComponent<SpriteRenderer>();
         rb = GetComponent<Rigidbody2D>();
-
-        
     }
 
-    // Update is called once per frame
     private void Update()
     {
+        // Di chuyển bằng phím máy tính hoặc button
+        if (moveLeft)
+        {
+            driX = -1f;
+        }
+        else if (moveRight)
+        {
+            driX = 1f;
+        }
+        else
+        {
+            driX = Input.GetAxisRaw("Horizontal");
+        }
 
-        driX = Input.GetAxisRaw("Horizontal");
-        rb.velocity = new Vector2 (driX * tocdo, rb.velocity.y);
+        rb.velocity = new Vector2(driX * tocdo, rb.velocity.y);
 
-        if (Input.GetButtonDown("Jump") && jumpCount < maxJumpCount)
+        // Nhảy bằng phím máy tính hoặc button
+        if ((Input.GetButtonDown("Jump") || jump) && jumpCount < maxJumpCount)
         {
             jumsound.Play();
             rb.velocity = new Vector2(rb.velocity.x, lucnhay);
             jumpCount++;
-
+            jump = false; // Reset jump sau khi nhảy
         }
 
-        if (Input.GetKeyDown(KeyCode.Escape)) // You can use any key or condition to toggle pause
+        if (Input.GetKeyDown(KeyCode.P)) // Toggle pause
         {
             if (isPaused)
             {
@@ -60,21 +72,47 @@ public class hero : MonoBehaviour
                 PauseGame();
             }
         }
+
         updateanimation();
+    }
+
+    public void MoveLeftButtonDown()
+    {
+        moveLeft = true;
+    }
+
+    public void MoveLeftButtonUp()
+    {
+        moveLeft = false;
+    }
+
+    public void MoveRightButtonDown()
+    {
+        moveRight = true;
+    }
+
+    public void MoveRightButtonUp()
+    {
+        moveRight = false;
+    }
+
+    public void JumpButtonDown()
+    {
+        jump = true;
     }
 
     void PauseGame()
     {
-        Time.timeScale = 0f; // This pauses the game
+        Time.timeScale = 0f; // Pauses the game
         isPaused = true;
-        // You may also want to show a pause menu or overlay here
+        Menu.SetActive(true);
     }
 
     void ResumeGame()
     {
-        Time.timeScale = 1f; // This resumes the game
+        Time.timeScale = 1f; // Resumes the game
         isPaused = false;
-        // If you have a pause menu or overlay, you may want to hide it here
+        Menu.SetActive(false);
     }
 
     private void updateanimation()
@@ -82,37 +120,31 @@ public class hero : MonoBehaviour
         MovementState state;
         if (driX > 0f)
         {
-            
-
             state = MovementState.running;
             sprite.flipX = false;
-
         }
         else if (driX < 0f)
         {
-            
-            
             state = MovementState.running;
             sprite.flipX = true;
-
         }
         else
         {
-            
             state = MovementState.idle;
         }
-       
-        if(rb.velocity.y > .1f)
+
+        if (rb.velocity.y > .1f)
         {
             state = MovementState.jumping;
-        }else if(rb.velocity.y < -.1f)
+        }
+        else if (rb.velocity.y < -.1f)
         {
             state = MovementState.falling;
         }
 
-        animator.SetInteger("state",(int)state);
-
+        animator.SetInteger("state", (int)state);
     }
+
     void OnCollisionEnter2D(Collision2D collision)
     {
         if (collision.gameObject.tag == "nen")
@@ -121,9 +153,4 @@ public class hero : MonoBehaviour
             jumpCount = 0;
         }
     }
-
-
-
-
-
 }
